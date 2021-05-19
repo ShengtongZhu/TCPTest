@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="select">
     <el-select v-model="value1" multiple placeholder="Please Choose Test Files">
       <el-option
           v-for="item in fileOptions"
@@ -65,5 +65,7 @@ export default {
 </script>
 
 <style scoped>
-
+.select{
+  margin-top: 37px;
+}
 </style>

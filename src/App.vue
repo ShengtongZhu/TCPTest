@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
+    <img alt="cuhk logo" src="./assets/cuhk_logo.png">
     <FilesServersSelect></FilesServersSelect>
     <TestResult></TestResult>
   </div>

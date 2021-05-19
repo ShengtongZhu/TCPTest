@@ -43,7 +43,10 @@ export default {
       bwArray:[],
       dataCollection: {},
       options: {maintainAspectRatio: false},
-      serverColors: []
+      serverColors: [],
+
+      latitude: "",
+      longitude: ""
     }
   },
   mounted: function () {
@@ -51,14 +54,24 @@ export default {
     Bus.$on('getValue', (data) => {
       [vm.files, vm.servers, vm.rounds, vm.serverColors] = data;
       console.log(vm.files, vm.servers, vm.rounds);
+      this.dataCollection.labels=[];
+      this.dataCollection.datasets=[];
       this.sendRequest(vm.files, vm.servers, vm.rounds);
+      // this.sendResult2Server();
     });
   },
   methods: {
     async sendRequest(files, servers, rounds) {
 
+      this.latitude="";
+      this.longitude="";
+
       this.dataCollection.labels=[];
       this.dataCollection.datasets=[];
+
+      this.bwArray=[];
+      this.bwTimeArray=[];
+
 
       this.roundPercent = 1;
 
@@ -71,6 +84,25 @@ export default {
 
         let bwTimeServer = [];
         let bwServer = [];
+
+        if(round===0){
+          for(let i=0;i<servers.length;i++){
+            let server = servers[i];
+            let serverArray=server.split(' ');
+            let serverIP=serverArray[0];
+            let serverTCP=serverArray[1];
+            let temp=Object.assign({}, this.dataCollection);
+            temp.datasets.push({
+              label: serverTCP,
+              fill: false,
+              borderColor: this.serverColors[i],
+              data: []
+            });
+            this.dataCollection=temp;
+          }
+        }
+
+
         for (let i = 0; i < servers.length; i++) {
           let server = servers[i];
           this.filePercent = 1;
@@ -79,14 +111,7 @@ export default {
           let serverIP=serverArray[0];
           let serverTCP=serverArray[1];
 
-          let temp=Object.assign({}, this.dataCollection);
-          temp.datasets.push({
-            label: serverTCP,
-            fill: false,
-            borderColor: this.serverColors[i],
-            data: []
-          })
-          this.dataCollection=temp;
+
 
           let bwTimeFile=[];
           let bwFile=[];
@@ -99,9 +124,23 @@ export default {
             bwTimeFile.push(bwTime);
             bwFile.push(averageBw);
 
-            let temp=Object.assign({}, this.dataCollection);
-            temp.datasets[i].data.push(averageBw);
-            this.dataCollection=temp;
+            if(round===0){
+              let temp=Object.assign({}, this.dataCollection);
+              temp.datasets[i].data.push(averageBw);
+              this.dataCollection=temp;
+            }
+            else{
+              let sum=0;
+              for(let u=0;u<=round-1;u++){
+                sum+=parseFloat(this.bwArray[u][i][j]);
+              }
+              sum += parseFloat(averageBw);
+              let temp=Object.assign({}, this.dataCollection);
+              // console.log('sum',sum);
+              temp.datasets[i].data[j]=(sum/(round+1)).toFixed(2);
+              // console.log(temp.datasets[i].data[j]);
+              this.dataCollection=temp;
+            }
 
           }
           bwTimeServer.push(bwTimeFile);
@@ -112,8 +151,40 @@ export default {
         this.bwArray.push(bwServer);
         this.roundPercent = ((round + 1) / rounds) * 100;
       }
+      this.sendResult2Server();
+
     },
 
+    sendResult2Server(){
+      console.log("send request to server");
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(this.getPositionSuccess, this.getPositionError);
+      }
+      let returnResult={
+        "latitude": this.latitude,
+        "longitude": this.longitude,
+        "rounds": this.rounds,
+        "files": this.files,
+        "servers": this.servers,
+        "data": this.bwTimeArray
+      };
+      console.log(returnResult);
+      let sendRequest=new XMLHttpRequest();
+      sendRequest.open("POST", "http://103.49.160.133:8090/store");
+      sendRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      sendRequest.send(JSON.stringify(returnResult));
+    },
+
+    getPositionSuccess(){
+      this.latitude=position.coords.latitude;
+      this.longitude=position.coords.longitude;
+    },
+
+    getPositionError(){
+      this.latitude = "";
+      this.longitude = "";
+    },
 
     asyncSend(url, avoidCache) {
       return new Promise(function (resolve) {
@@ -144,7 +215,8 @@ export default {
           }
           if (request.readyState === 4) {
             endTime = (new Date()).getTime();
-            let downloadSize = request.responseText.length;
+            // let downloadSize = request.responseText.length;
+            let downloadSize = request.response.length;
             let time = (endTime - startTime) / 1000;
             let sizeInBits = downloadSize * 8;
             let speed = ((sizeInBits / time) / (1024 * 1024)).toFixed(2);
