@@ -8,6 +8,25 @@ export default {
     mounted () {
         // this.chartData is created in the mixin.
         // If you want to pass options please create a local options object
-        this.renderChart(this.chartData, this.options)
+        // this.renderChart(this.chartData, this.options)
+        this.renderChart(this.chartData,{
+            maintainAspectRatio: false,
+            scales: {
+                xAxes: [{
+                    display: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'TCP variants'
+                    }
+                }],
+                yAxes: [{
+                    display: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Thoughtput / bps'
+                    }
+                }]
+            }
+        });
     }
 }

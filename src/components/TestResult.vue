@@ -42,7 +42,25 @@ export default {
       //[rounds][servers][files][bw]
       bwArray:[],
       dataCollection: {},
-      options: {maintainAspectRatio: false},
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            display: true,
+            title: {
+              display: true,
+              text: 'Month'
+            }
+          },
+          y: {
+            display: true,
+            title: {
+              display: true,
+              text: 'Value'
+            }
+          }
+        }
+      },
       serverColors: [],
 
       latitude: "",
@@ -91,6 +109,7 @@ export default {
             let serverArray=server.split(' ');
             let serverIP=serverArray[0];
             let serverTCP=serverArray[1];
+            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!",serverTCP);
             let temp=Object.assign({}, this.dataCollection);
             temp.datasets.push({
               label: serverTCP,
@@ -137,7 +156,8 @@ export default {
               sum += parseFloat(averageBw);
               let temp=Object.assign({}, this.dataCollection);
               // console.log('sum',sum);
-              temp.datasets[i].data[j]=(sum/(round+1)).toFixed(2);
+              // temp.datasets[i].data[j]=(sum/(round+1)).toFixed(2);
+              temp.datasets[i].data[j]=sum/(round+1);
               // console.log(temp.datasets[i].data[j]);
               this.dataCollection=temp;
             }
@@ -151,7 +171,7 @@ export default {
         this.bwArray.push(bwServer);
         this.roundPercent = ((round + 1) / rounds) * 100;
       }
-      this.sendResult2Server();
+      // this.sendResult2Server();
 
     },
 
@@ -202,7 +222,8 @@ export default {
             let now = (new Date()).getTime();
             let delta = now - progressTime;
             if (!Number.isNaN(delta)) {
-              let bw = parseFloat(((event.loaded - progressLoaded) * 8 / (delta / 1000) / 1024 / 1024).toFixed(2));
+              // let bw = parseFloat(((event.loaded - progressLoaded) * 8 / (delta / 1000) / 1024 / 1024).toFixed(2));
+              let bw = (event.loaded - progressLoaded) * 8 / (delta / 1000) / 1024 / 1024;
               progressLoaded = event.loaded;
               progressTime = now;
               tempResult.push([now - startTime, bw]);
@@ -215,11 +236,13 @@ export default {
           }
           if (request.readyState === 4) {
             endTime = (new Date()).getTime();
+            // console.log('end time   ', endTime);
             // let downloadSize = request.responseText.length;
             let downloadSize = request.response.length;
             let time = (endTime - startTime) / 1000;
             let sizeInBits = downloadSize * 8;
-            let speed = ((sizeInBits / time) / (1024 * 1024)).toFixed(2);
+            // let speed = ((sizeInBits / time) / (1024 * 1024)).toFixed(2);
+            let speed = (sizeInBits / time) / (1024 * 1024);
             console.log(downloadSize, time, speed);
             resolve([speed, tempResult]);
           }
